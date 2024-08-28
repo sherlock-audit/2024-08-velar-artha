@@ -1,0 +1,61 @@
+contracts_folder: src
+
+default_ecosystem: ethereum
+
+vyper:
+  version: 0.3.10
+
+networks:
+  custom:
+    - name: testnet
+      chain_id: 808813
+      ecosystem: bob
+      base_ecosystem_plugin: ethereum
+      default_provider: node
+
+# rpc url
+node:
+  bob:
+    testnet:
+      uri:  https://bob-sepolia.rpc.gobob.xyz
+
+# explorer url
+etherscan:
+  bob:
+    testnet:
+      uri: https://bob-sepolia.explorer.gobob.xyz/          # URL used for showing transactions
+      api_uri: https://bob-sepolia.explorer.gobob.xyz/api/  # URL used for making API requests.
+
+hardhat:
+  host: auto
+
+foundry:
+  host: auto
+
+plugins:
+  - name: etherscan
+    version: 0.8.2
+  - name: hardhat
+    version: 0.8.1
+  - name: foundry
+    version: 0.8.4
+  - name: solidity
+    version: 0.8.3
+  - name: vyper
+    version: 0.8.4
+
+test:
+  coverage:
+    exclude:
+      - contract_name: ERC20
+      - contract_name: MockExtractor
+      - contract_name: collect
+      - method_name: __builtin__
+    reports:
+      terminal:
+        verbose: True
+      # html:
+      #   verbose: True
+    # track: True                 # NOTE: coverage only works with hardhat?
+
+# eof
