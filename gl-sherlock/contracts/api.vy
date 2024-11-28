@@ -4,6 +4,7 @@ import params    as Params
 import pools     as Pools
 import fees      as Fees
 import positions as Positions
+import ERC20Plus as ERC20Plus
 
 ########################################################################
 # This is the entry-point contract.
@@ -55,10 +56,10 @@ def CONTEXT(
     quote_token: address,
     desired    : uint256,
     slippage   : uint256,
-    payload    : Bytes[224]
+    payload    : Bytes[512]
 ) -> Ctx:
-  base_decimals : uint256 = convert(ERC20Plus(base_token).decimals(), uint256)
-  quote_decimals: uint256 = convert(ERC20Plus(quote_token).decimals(), uint256)
+  base_decimals : uint256 = ERC20Plus(base_token).decimals()
+  quote_decimals: uint256 = ERC20Plus(quote_token).decimals()
   # this will revert on error
   price         : uint256 = self.ORACLE.price(quote_decimals,
                                               desired,
@@ -72,6 +73,7 @@ def CONTEXT(
 
 ########################################################################
 @external
+@nonreentrant("lock")
 def mint(
   base_token  : address, #ERC20
   quote_token : address, #ERC20
@@ -80,7 +82,7 @@ def mint(
   quote_amt   : uint256,
   desired     : uint256,
   slippage    : uint256,
-  payload     : Bytes[224]
+  payload     : Bytes[512]
 ) -> uint256:
   """
   @notice            Provide liquidity to the pool
@@ -101,6 +103,7 @@ def mint(
   return self.CORE.mint(1, base_token, quote_token, lp_token, base_amt, quote_amt, ctx)
 
 @external
+@nonreentrant("lock")
 def burn(
   base_token  : address,
   quote_token : address,
@@ -108,7 +111,7 @@ def burn(
   lp_amt      : uint256,
   desired     : uint256,
   slippage    : uint256,
-  payload     : Bytes[224]
+  payload     : Bytes[512]
 ) -> Tokens:
   """
   @notice            Withdraw liquidity from the pool
@@ -128,6 +131,7 @@ def burn(
   return self.CORE.burn(1, base_token, quote_token, lp_token, lp_amt, ctx)
 
 @external
+@nonreentrant("lock")
 def open(
   base_token  : address,
   quote_token : address,
@@ -136,7 +140,7 @@ def open(
   leverage    : uint256,
   desired     : uint256,
   slippage    : uint256,
-  payload     : Bytes[224]
+  payload     : Bytes[512]
 ) -> PositionState:
   """
   @notice            Open a position
@@ -158,13 +162,14 @@ def open(
   return self.CORE.open(1, base_token, quote_token, long, collateral0, leverage, ctx)
 
 @external
+@nonreentrant("lock")
 def close(
   base_token  : address,
   quote_token : address,
   position_id : uint256,
   desired     : uint256,
   slippage    : uint256,
-  payload     : Bytes[224]
+  payload     : Bytes[512]
 ) -> PositionValue:
   """
   @notice            Close a position
@@ -183,13 +188,14 @@ def close(
   return self.CORE.close(1, base_token, quote_token, position_id, ctx)
 
 @external
+@nonreentrant("lock")
 def liquidate(
   base_token : address,
   quote_token: address,
   position_id: uint256,
   desired     : uint256,
   slippage    : uint256,
-  payload     : Bytes[224]
+  payload     : Bytes[512]
 ) -> PositionValue:
   """
   @notice            Liquidate a position
