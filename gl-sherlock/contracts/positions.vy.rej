@@ -1,0 +1,51 @@
+diff a/gl-sherlock/contracts/positions.vy b/gl-sherlock/contracts/positions.vy	(rejected hunks)
+@@ -192,6 +192,10 @@ def value(id: uint256, ctx: Ctx) -> PositionValue:
+   #
+   # Positions which go negative due to price fluctuations cost the pool
+   # EV profits since the most it can make is available collateral.
++  pool              : PoolState = self.POOLS.lookup(pos.pool)
++  bc                : uint256   = pool.base_collateral
++  qc                : uint256   = pool.quote_collateral
++
+   deltas: Deltas        = Deltas({
+     base_interest   : [self.MATH.MINUS(pos.interest)],
+     quote_interest  : [],
+@@ -206,19 +210,19 @@ def value(id: uint256, ctx: Ctx) -> PositionValue:
+     quote_transfer  : [],
+                       # in the worst case describe above, reserves
+                       # dont change
+-    quote_reserves  : [self.MATH.PLUS(pos.collateral), #does not need min()
++    quote_reserves  : [self.MATH.PLUS(min(pos.collateral, qc)),
+                        self.MATH.MINUS(fees.funding_paid)],
+     quote_collateral: [self.MATH.PLUS(fees.funding_paid),
+-                       self.MATH.MINUS(pos.collateral)],
++                       self.MATH.MINUS(min(pos.collateral, qc))],
+   }) if pos.long else  Deltas({
+     base_interest   : [],
+     quote_interest  : [self.MATH.MINUS(pos.interest)],
+ 
+     base_transfer   : [],
+-    base_reserves   : [self.MATH.PLUS(pos.collateral),
++    base_reserves   : [self.MATH.PLUS(min(pos.collateral, bc)),
+                        self.MATH.MINUS(fees.funding_paid)],
+     base_collateral : [self.MATH.PLUS(fees.funding_paid), # <-
+-                       self.MATH.MINUS(pos.collateral)],
++                       self.MATH.MINUS(min(pos.collateral, bc))],
+ 
+     quote_transfer  : [self.MATH.PLUS(pnl.payout),
+                        self.MATH.PLUS(fees.funding_received)],
+@@ -250,8 +254,13 @@ def calc_fees(id: uint256) -> FeesPaid:
+   c1              : Val           = self.deduct(c0,           fees.funding_paid)
+   c2              : Val           = self.deduct(c1.remaining, fees.borrowing_paid)
+   # Funding fees prioritized over borrowing fees.
+-  funding_paid    : uint256       = c1.deducted
++  avail_pay       : uint256       = pool.quote_collateral if pos.long else (
++                                    pool.base_collateral )
++  funding_paid    : uint256       = min(c1.deducted, avail_pay)
++  # borrowing_paid is for informational purposes only, could also say
++  # min(c2.deducted, avail_pay - funding_paid).
+   borrowing_paid  : uint256       = c2.deducted
++  # other users' bad positions do not affect liquidatability
+   remaining       : uint256       = c2.remaining
+   # When there are negative positions (liquidation bot failure):
+   avail           : uint256       = pool.base_collateral if pos.long else (

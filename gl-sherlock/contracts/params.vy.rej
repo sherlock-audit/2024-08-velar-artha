@@ -1,0 +1,16 @@
+diff a/gl-sherlock/contracts/params.vy b/gl-sherlock/contracts/params.vy	(rejected hunks)
+@@ -60,12 +60,12 @@ def utilization(reserves: uint256, interest: uint256) -> uint256:
+     """
+     Reserve utilization in percent (rounded down).
+     """
+-    return 0 if (reserves == 0 or interest == 0) else (interest / (reserves / 100))
++    return 0 if (reserves == 0 or interest == 0) else (interest / (reserves / 100_000))
+ 
+ @internal
+ @pure
+ def scale(fee: uint256, utilization: uint256) -> uint256:
+-    return (fee * utilization) / 100
++    return (fee * utilization) / 100_000
+ 
+ @internal
+ @view

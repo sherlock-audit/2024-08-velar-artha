@@ -1,0 +1,139 @@
+diff a/gl-sherlock/contracts/api.vy b/gl-sherlock/contracts/api.vy	(rejected hunks)
+@@ -4,6 +4,7 @@ import params    as Params
+ import pools     as Pools
+ import fees      as Fees
+ import positions as Positions
++import ERC20Plus as ERC20Plus
+ 
+ ########################################################################
+ # This is the entry-point contract.
+@@ -55,10 +57,10 @@ def CONTEXT(
+     quote_token: address,
+     desired    : uint256,
+     slippage   : uint256,
+-    payload    : Bytes[224]
++    payload    : Bytes[512]
+ ) -> Ctx:
+-  base_decimals : uint256 = convert(ERC20Plus(base_token).decimals(), uint256)
+-  quote_decimals: uint256 = convert(ERC20Plus(quote_token).decimals(), uint256)
++  base_decimals : uint256 = ERC20Plus(base_token).decimals()
++  quote_decimals: uint256 = ERC20Plus(quote_token).decimals()
+   # this will revert on error
+   price         : uint256 = self.ORACLE.price(quote_decimals,
+                                               desired,
+@@ -70,8 +72,20 @@ def CONTEXT(
+     quote_decimals: quote_decimals,
+   })
+ 
++ERR_LOCK: constant(String[16]) = "LOCKED"
++
++@internal
++def is_locked() -> bool:
++  return self.LOCK[tx.origin] == block.number
++
++@internal
++def lock():
++  assert not self.is_locked(), ERR_LOCK
++  self.LOCK[tx.origin] = block.number
++
+ ########################################################################
+ @external
++@nonreentrant("lock")
+ def mint(
+   base_token  : address, #ERC20
+   quote_token : address, #ERC20
+@@ -80,7 +94,7 @@ def mint(
+   quote_amt   : uint256,
+   desired     : uint256,
+   slippage    : uint256,
+-  payload     : Bytes[224]
++  payload     : Bytes[512]
+ ) -> uint256:
+   """
+   @notice            Provide liquidity to the pool
+@@ -97,10 +111,12 @@ def mint(
+                      send 50000).
+   @param payload     Signed Redstone oracle payload
+   """
++  self.lock()
+   ctx: Ctx = self.CONTEXT(base_token, quote_token, desired, slippage, payload)
+   return self.CORE.mint(1, base_token, quote_token, lp_token, base_amt, quote_amt, ctx)
+ 
+ @external
++@nonreentrant("lock")
+ def burn(
+   base_token  : address,
+   quote_token : address,
+@@ -108,7 +124,7 @@ def burn(
+   lp_amt      : uint256,
+   desired     : uint256,
+   slippage    : uint256,
+-  payload     : Bytes[224]
++  payload     : Bytes[512]
+ ) -> Tokens:
+   """
+   @notice            Withdraw liquidity from the pool
+@@ -124,10 +140,12 @@ def burn(
+                      send 50000).
+   @param payload     Signed Redstone oracle payload
+   """
++  self.lock()
+   ctx: Ctx = self.CONTEXT(base_token, quote_token, desired, slippage, payload)
+   return self.CORE.burn(1, base_token, quote_token, lp_token, lp_amt, ctx)
+ 
+ @external
++@nonreentrant("lock")
+ def open(
+   base_token  : address,
+   quote_token : address,
+@@ -136,7 +154,7 @@ def open(
+   leverage    : uint256,
+   desired     : uint256,
+   slippage    : uint256,
+-  payload     : Bytes[224]
++  payload     : Bytes[512]
+ ) -> PositionState:
+   """
+   @notice            Open a position
+@@ -154,17 +172,19 @@ def open(
+                      send 50000).
+   @param payload     Signed Redstone oracle payload
+   """
++  self.lock()
+   ctx: Ctx = self.CONTEXT(base_token, quote_token, desired, slippage, payload)
+   return self.CORE.open(1, base_token, quote_token, long, collateral0, leverage, ctx)
+ 
+ @external
++@nonreentrant("lock")
+ def close(
+   base_token  : address,
+   quote_token : address,
+   position_id : uint256,
+   desired     : uint256,
+   slippage    : uint256,
+-  payload     : Bytes[224]
++  payload     : Bytes[512]
+ ) -> PositionValue:
+   """
+   @notice            Close a position
+@@ -179,17 +199,19 @@ def close(
+                      send 50000).
+   @param payload     Signed Redstone oracle payload
+   """
++  self.lock()
+   ctx: Ctx = self.CONTEXT(base_token, quote_token, desired, slippage, payload)
+   return self.CORE.close(1, base_token, quote_token, position_id, ctx)
+ 
+ @external
++@nonreentrant("lock")
+ def liquidate(
+   base_token : address,
+   quote_token: address,
+   position_id: uint256,
+   desired     : uint256,
+   slippage    : uint256,
+-  payload     : Bytes[224]
++  payload     : Bytes[512]
+ ) -> PositionValue:
+   """
+   @notice            Liquidate a position

@@ -1,0 +1,10 @@
+diff a/gl-sherlock/contracts/math.vy b/gl-sherlock/contracts/math.vy	(rejected hunks)
+@@ -160,7 +160,7 @@ def balanced(state: Value, burn_value: uint256, ctx: Ctx) -> Tokens:
+ # Magic number which depends on the smallest fee one wants to support
+ # and the blocktime (since fees are per block). See types.vy/Parameters
+ # for an example.
+-DENOM: constant(uint256) = 1_000_000_000
++DENOM: constant(uint256) = 1_000_000_000_000
+ 
+ @external
+ @pure

@@ -30,6 +30,7 @@ CORE  : public(Core)
 
 DEPLOYER   : address
 INITIALIZED: bool
+LOCK       : public(HashMap[address, uint256])
 
 @external
 def __init__():
